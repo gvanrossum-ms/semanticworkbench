@@ -2,10 +2,10 @@
   "folders": [
     {
       "path": ".",
-      "name": "examples/python/python-02-simple-chatbot"
+      "name": "examples/python/spelunker"
     },
     {
-      "path": "../../.."
+      "path": "../.."
     }
   ]
 }
