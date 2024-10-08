@@ -1,8 +1,8 @@
 [project]
 name = "assistant"
-version = "0.1.0"
-description = "Exploration of a python Semantic Workbench OpenAI assistant."
-authors = [{ name = "Semantic Workbench Team" }]
+version = "0.0.0"
+description = "Assistant for exploring (spelunking) large code bases."
+authors = [{ name = "Guido van Rossum" }]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
