@@ -54,11 +54,11 @@ logger = logging.getLogger(__name__)
 #
 
 # the service id to be registered in the workbench to identify the assistant
-service_id = "python-02-simple-chatbot.workbench-explorer"
+service_id = "spelunker.workbench-explorer"
 # the name of the assistant service, as it will appear in the workbench UI
-service_name = "Python Example 02: Simple Chatbot"
+service_name = "Spelunker"
 # a description of the assistant service, as it will appear in the workbench UI
-service_description = "A simple OpenAI chat assistant using the Semantic Workbench Assistant SDK."
+service_description = "(Eventually) a code base explorer for large code bases."
 
 #
 # create the configuration provider, using the extended configuration model
