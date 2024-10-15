@@ -85,10 +85,11 @@ from semantic_workbench_api_model.workbench_model import (
     WorkflowRun,
     WorkflowRunList,
 )
-from sqlalchemy.orm import joinedload
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sse_starlette import EventSourceResponse, ServerSentEvent
+
+from semantic_workbench_service import azure_speech
 
 from . import assistant_api_key, auth, controller, db, files, middleware, settings
 from .event import ConversationEventQueueItem
@@ -113,7 +114,7 @@ def init(
         return db.create_session(app.state.db_engine)
 
     async def _forward_events_to_assistant(
-        assistant: db.Assistant, event_queue: asyncio.Queue[ConversationEvent]
+        assistant_id: uuid.UUID, event_queue: asyncio.Queue[ConversationEvent]
     ) -> NoReturn:
         while True:
             try:
@@ -124,13 +125,13 @@ def init(
 
                 start_time = datetime.datetime.now(datetime.UTC)
 
-                await assistant_controller.forward_event_to_assistant(assistant=assistant, event=event)
+                await assistant_controller.forward_event_to_assistant(assistant_id=assistant_id, event=event)
 
                 end_time = datetime.datetime.now(datetime.UTC)
                 logger.debug(
                     "forwarded event to assistant; assistant_id: %s, conversation_id: %s, event_id: %s,"
                     " duration: %s, time since event: %s",
-                    assistant.assistant_id,
+                    assistant_id,
                     event.conversation_id,
                     event.id,
                     end_time - start_time,
@@ -187,21 +188,11 @@ def init(
 
             for assistant_id in assistant_ids:
                 if assistant_id not in assistant_event_queues:
-                    async with _controller_get_session() as session:
-                        assistant = (
-                            await session.exec(
-                                select(db.Assistant)
-                                .where(db.Assistant.assistant_id == assistant_id)
-                                .options(
-                                    joinedload(db.Assistant.related_assistant_service_registration, innerjoin=True)
-                                )
-                            )
-                        ).one()
                     queue = asyncio.Queue()
                     assistant_event_queues[assistant_id] = queue
                     task = asyncio.create_task(
-                        _forward_events_to_assistant(assistant, queue),
-                        name=f"forward_events_to_{assistant.assistant_id}",
+                        _forward_events_to_assistant(assistant_id, queue),
+                        name=f"forward_events_to_{assistant_id}",
                     )
                     background_tasks.add(task)
 
@@ -1067,3 +1058,7 @@ def init(
             user_principal=user_principal,
             workflow_run_id=workflow_run_id,
         )
+
+    @app.get("/azure-speech/token")
+    async def get_azure_speech_token() -> dict[str, str]:
+        return azure_speech.get_token()

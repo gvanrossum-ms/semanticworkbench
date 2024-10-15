@@ -4,6 +4,7 @@ from pathlib import Path
 
 import openai_client
 from chat_driver import ChatDriverConfig
+from document_skill import DocumentSkill
 from events import events as skill_events
 from posix_skill import PosixSkill
 from semantic_workbench_api_model.workbench_model import (
@@ -13,7 +14,6 @@ from semantic_workbench_api_model.workbench_model import (
 )
 from semantic_workbench_assistant.assistant_app import (
     ConversationContext,
-    FileStorageContext,
 )
 from skill_library import Assistant
 
@@ -134,14 +134,11 @@ class AssistantRegistry:
             )
             return
 
-        data_dir = FileStorageContext.get(conversation_context).directory
-
         # Create the assistant.
         assistant = Assistant(
             name="Assistant",
             chat_driver_config=ChatDriverConfig(
                 openai_client=async_client,
-                data_dir=data_dir / "assistant-chat-driver",
                 model=chat_driver_config.openai_model,
                 instructions=chat_driver_config.instructions,
             ),
@@ -155,12 +152,19 @@ class AssistantRegistry:
             mount_dir="/mnt/data",
             chat_driver_config=ChatDriverConfig(
                 openai_client=async_client,
-                data_dir=data_dir / "posix-skill-chat-driver",
+                model=chat_driver_config.openai_model,
+            ),
+        )
+
+        document_skill = DocumentSkill(
+            context=assistant.context,
+            chat_driver_config=ChatDriverConfig(
+                openai_client=async_client,
                 model=chat_driver_config.openai_model,
             ),
         )
 
         # Register the skills with the assistant.
-        assistant.register_skills([posix_skill])
+        assistant.register_skills([posix_skill, document_skill])
 
         return assistant
